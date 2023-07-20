@@ -1,13 +1,16 @@
 mod settings;
 
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use clap::builder::OsStr;
 use clap::{value_parser, Arg, ArgAction};
 use config::{Config, Environment, File};
 use log::{debug, error, info, trace, warn, LevelFilter};
+use std::ffi::OsString;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::settings::{write_settings, Settings, SettingsOutputFormat};
+use crate::settings::{default_config_path, write_settings, Settings, SettingsOutputFormat};
 
 /// Sets up logging based on the specified verbosity level.
 ///
@@ -50,6 +53,40 @@ fn setup_logging(verbose: &str) {
         .init();
 }
 
+async fn index() -> impl Responder {
+    HttpResponse::Ok().body("Help text")
+}
+
+// async fn upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
+//     while let Ok(Some(mut field)) = payload.try_next().await {
+//         let content_disposition = field.content_disposition().unwrap();
+//         let filename = content_disposition.get_filename().unwrap();
+//         let filepath = format!("./tmp/{}", sanitize_filename::sanitize(&filename));
+//         let mut f = web::block(|| std::fs::File::create(filepath)).await.unwrap();
+//         while let Some(chunk) = field.next().await {
+//             let data = chunk.unwrap();
+//             f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+//         }
+//     }
+//     Ok(HttpResponse::Ok().into())
+// }
+
+// #[actix_web::main]
+// async fn main() -> std::io::Result<()> {
+//     const HOST_URI: &str = "127.0.0.1:8080";
+//     setup_logging("info");
+//     info!("Access via {}", HOST_URI);
+//     HttpServer::new(|| {
+//         App::new()
+//             // .service(web::resource("/upload").route(web::post().to(upload)))
+//             .route("/", web::get().to(index))
+//             // .route("/generate-manifest", web::get().to(generate_manifest))
+//     })
+//     .bind(HOST_URI)?
+//     .run()
+//     .await
+// }
+
 fn main() {
     const ABOUT: &str = "An example CLI program using the following crates:
 
@@ -58,6 +95,8 @@ fn main() {
   - env_logger
   - directories
   - serde";
+    let default_config_path_value = OsString::from(default_config_path().display().to_string());
+    // const DEFAULT_CONFIG_PATH: &str = "";
     let matches = clap::Command::new("FIXME")
         .version("v1.0.0")
         .author("Erich Schroeter <erich.schroeter@gmail.com>")
@@ -68,50 +107,17 @@ fn main() {
 Argument values are processed in the following order, using the last processed value:
 
   1. config file (e.g. $HOME/.config/FIXME/default.json)
-  2. environment variable (e.g. EXAMPLE_CLI_config=<path>)
+  2. environment variable (e.g. FIXME_config=<path>)
   3. explicit argument (e.g. --config <path>)",
             ABOUT
         ))
-        .subcommand(
-            clap::Command::new("config")
-                .about("View the present config or generate a default config.")
-                .arg(
-                    Arg::new("default")
-                        .short('d')
-                        .long("default")
-                        .action(ArgAction::SetTrue)
-                        .help("Generate a default config, rather than present environment values"),
-                )
-                .arg(
-                    Arg::new("force")
-                        .long("force")
-                        .action(ArgAction::SetTrue)
-                        .help("Overwrite any existing file"),
-                )
-                .arg(
-                    Arg::new("output")
-                        .short('o')
-                        .long("output")
-                        .help("Write the config output to a file")
-                        .value_parser(value_parser!(PathBuf)),
-                )
-                .arg(
-                    Arg::new("format")
-                        .short('f')
-                        .long("format")
-                        .help("Specify output format for the config")
-                        .value_parser(value_parser!(SettingsOutputFormat)),
-                ),
-        )
         .arg(
             Arg::new("config")
                 .short('c')
                 .long("config")
                 .value_name("FILE")
-                .help(format!(
-                    "Sets a custom config file [default: {}]",
-                    Settings::default().config_path.display().to_string()
-                ))
+                .default_value(&default_config_path_value)
+                .help("Sets a custom config file")
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
@@ -119,40 +125,35 @@ Argument values are processed in the following order, using the last processed v
                 .short('v')
                 .long("verbose")
                 .value_name("VERBOSE")
-                .help(format!(
-                    "Sets the verbosity log level [default: {}]",
-                    Settings::default().verbose
-                ))
-                .long_help("Choices: [error, warn, info, debug, trace]"),
+                .default_value(Settings::default().verbose)
+                .help("Sets the verbosity log level")
+                .long_help("Choices: [off, error, warn, info, debug, trace]"),
         )
         .get_matches();
 
     let settings = Config::builder()
         .add_source(
-            File::with_name(&Settings::default().config_path.display().to_string()).required(false),
+            File::with_name(
+                &matches
+                    .get_one::<PathBuf>("config")
+                    .unwrap()
+                    .display()
+                    .to_string(),
+            )
+            .required(false),
         )
-        .add_source(Environment::with_prefix("EXAMPLE_CLI"))
+        .add_source(Environment::with_prefix("FIXME"))
         .build()
         .unwrap();
 
     let mut settings: Settings = settings.try_into().unwrap();
 
+    // Override the verbose setting in the config file with a command line arg value if specified.
     if let Some(o) = matches.get_one::<String>("verbose") {
         settings.verbose = o.to_owned();
     }
 
-    if let Some(o) = matches.get_one::<PathBuf>("config") {
-        settings.config_path = o.to_owned();
-    }
-
     setup_logging(&settings.verbose);
-
-    // Only check for config file to exist if not the default config.
-    if settings.config_path != Settings::default().config_path && !settings.config_path.exists() {
-        error!("Config not found: {}", settings.config_path.display());
-        std::process::exit(1);
-    } else {
-    }
 
     error!("testing");
     warn!("testing");

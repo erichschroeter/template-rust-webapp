@@ -40,14 +40,12 @@ impl clap::ValueEnum for SettingsOutputFormat {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
     pub verbose: String,
-    pub config_path: PathBuf,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             verbose: "info".to_string(),
-            config_path: default_config_path(),
         }
     }
 }
@@ -63,9 +61,6 @@ impl From<Config> for Settings {
         let mut cfg = Settings::default();
         if let Ok(o) = value.get_string("verbose") {
             cfg.verbose = o;
-        }
-        if let Ok(o) = value.get_string("config") {
-            cfg.config_path = PathBuf::new().join(o);
         }
         cfg
     }
@@ -137,7 +132,7 @@ pub fn write_settings(out: &mut dyn Write, settings: &Settings, fmt: &SettingsOu
 ///
 /// It is recommended to handle the potential errors when using this function.
 ///
-fn default_config_path() -> PathBuf {
+pub fn default_config_path() -> PathBuf {
     let user_dirs = UserDirs::new().unwrap();
     let mut path = PathBuf::from(user_dirs.home_dir());
     path.push(".config/FIXME/default.yaml");
