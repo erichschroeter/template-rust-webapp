@@ -1,15 +1,19 @@
 mod settings;
+mod command;
+mod route;
 
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use clap::builder::OsStr;
 use clap::{value_parser, Arg, ArgAction};
 use config::{Config, Environment, File};
 use log::{debug, error, info, trace, warn, LevelFilter};
+use route::index::index;
 use std::ffi::OsString;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use crate::command::Command;
+use crate::command::run::RunCommand;
 use crate::settings::{default_config_path, write_settings, Settings, SettingsOutputFormat};
 
 /// Sets up logging based on the specified verbosity level.
@@ -53,9 +57,9 @@ fn setup_logging(verbose: &str) {
         .init();
 }
 
-async fn index() -> impl Responder {
-    HttpResponse::Ok().body("Help text")
-}
+// async fn index() -> impl Responder {
+//     HttpResponse::Ok().body("Help text")
+// }
 
 // async fn upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
 //     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -87,7 +91,8 @@ async fn index() -> impl Responder {
 //     .await
 // }
 
-fn main() {
+#[actix_web::main]
+async fn main() {
     const ABOUT: &str = "An example CLI program using the following crates:
 
   - clap
@@ -97,7 +102,7 @@ fn main() {
   - serde";
     let default_config_path_value = OsString::from(default_config_path().display().to_string());
     // const DEFAULT_CONFIG_PATH: &str = "";
-    let matches = clap::Command::new("FIXME")
+    let app = clap::Command::new("FIXME")
         .version("v1.0.0")
         .author("Erich Schroeter <erich.schroeter@gmail.com>")
         .about(ABOUT)
@@ -129,7 +134,17 @@ Argument values are processed in the following order, using the last processed v
                 .help("Sets the verbosity log level")
                 .long_help("Choices: [off, error, warn, info, debug, trace]"),
         )
-        .get_matches();
+        .infer_subcommands(true)
+        .arg_required_else_help(true)
+        .subcommand(
+            clap::Command::new("run")
+                .about("Run the web server")
+        )
+        .subcommand(
+            clap::Command::new("generate-manifest")
+                .about("Generates a manifest file")
+        );
+    let matches = &app.get_matches();
 
     let settings = Config::builder()
         .add_source(
@@ -148,7 +163,7 @@ Argument values are processed in the following order, using the last processed v
 
     let mut settings: Settings = settings.try_into().unwrap();
 
-    // Override the verbose setting in the config file with a command line arg value if specified.
+    // Override the verbose setting in the with command-line arg value if specified.
     if let Some(o) = matches.get_one::<String>("verbose") {
         settings.verbose = o.to_owned();
     }
@@ -161,39 +176,68 @@ Argument values are processed in the following order, using the last processed v
     debug!("testing");
     trace!("testing");
 
-    match matches.subcommand() {
-        Some(("config", sub_matches)) => {
-            let mut out = match sub_matches.get_one::<PathBuf>("output") {
-                Some(file) => {
-                    if Path::new(file).exists() {
-                        if sub_matches.get_flag("force") {
-                            fs::remove_file(file).unwrap();
-                        } else {
-                            error!("File already exists: {}", file.display());
-                            std::process::exit(1);
-                        }
-                    }
+    if let Some(_cmd) = matches.subcommand_matches("run") {
+        run_http_server().await;
+    } else {
+        let subcommand = match matches.subcommand() {
+            Some(("run", _sub_matches)) => {
+                Box::new(RunCommand)
+            }
+            // Some(("config", sub_matches)) => {
+            //     let mut out = match sub_matches.get_one::<PathBuf>("output") {
+            //         Some(file) => {
+            //             if Path::new(file).exists() {
+            //                 if sub_matches.get_flag("force") {
+            //                     fs::remove_file(file).unwrap();
+            //                 } else {
+            //                     error!("File already exists: {}", file.display());
+            //                     std::process::exit(1);
+            //                 }
+            //             }
 
-                    let file = OpenOptions::new()
-                        .create_new(true)
-                        .write(true)
-                        .append(true)
-                        .open(file)
-                        .unwrap();
-                    Box::new(file) as Box<dyn Write>
-                }
-                None => Box::new(std::io::stdout()) as Box<dyn Write>,
-            };
-            write_settings(
-                &mut out,
-                &settings,
-                sub_matches
-                    .get_one::<SettingsOutputFormat>("format")
-                    .unwrap_or_default(),
-            );
+            //             let file = OpenOptions::new()
+            //                 .create_new(true)
+            //                 .write(true)
+            //                 .append(true)
+            //                 .open(file)
+            //                 .unwrap();
+            //             Box::new(file) as Box<dyn Write>
+            //         }
+            //         None => Box::new(std::io::stdout()) as Box<dyn Write>,
+            //     };
+            //     write_settings(
+            //         &mut out,
+            //         &settings,
+            //         sub_matches
+            //             .get_one::<SettingsOutputFormat>("format")
+            //             .unwrap_or_default(),
+            //     );
+            // }
+            _ => {
+                // println!("{}", ABOUT);
+                unreachable!()
+            }
+        };
+        if let Err(e) = subcommand.execute() {
+            eprintln!("Error executing command: {}", e);
         }
-        _ => {
-            println!("{}", ABOUT);
+    }
+}
+
+async fn run_http_server() {
+    let server = HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(index))
+            // .route("/generate-manifest", web::get().to(generate_manifest))
+    })
+    .bind("127.0.0.1:8080");
+
+    match server {
+        Ok(server) => {
+            if let Err(e) = server.run().await {
+                eprintln!("Server error: {}", e);
+            }
         }
+        Err(e) => eprintln!("Failed to bind server: {}", e),
     }
 }
