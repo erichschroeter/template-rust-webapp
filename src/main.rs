@@ -177,7 +177,7 @@ Argument values are processed in the following order, using the last processed v
     trace!("testing");
 
     if let Some(_cmd) = matches.subcommand_matches("run") {
-        run_http_server().await;
+        run_http_server(&settings).await;
     } else {
         let subcommand = match matches.subcommand() {
             Some(("run", _sub_matches)) => {
@@ -224,13 +224,14 @@ Argument values are processed in the following order, using the last processed v
     }
 }
 
-async fn run_http_server() {
+async fn run_http_server(cfg: &Settings) {
     let server = HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
             // .route("/generate-manifest", web::get().to(generate_manifest))
     })
-    .bind("127.0.0.1:8080");
+    .bind(&cfg.bind_address);
+    // .bind("127.0.0.1:8080");
 
     match server {
         Ok(server) => {

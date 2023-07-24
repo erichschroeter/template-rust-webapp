@@ -40,12 +40,14 @@ impl clap::ValueEnum for SettingsOutputFormat {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
     pub verbose: String,
+    pub bind_address: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             verbose: "info".to_string(),
+            bind_address: "127.0.0.1:8080".to_string(),
         }
     }
 }
