@@ -40,14 +40,18 @@ impl clap::ValueEnum for SettingsOutputFormat {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Settings {
     pub verbose: String,
-    pub bind_address: String,
+    pub address: String,
+    pub port: u16,
+    // pub bind_address: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             verbose: "info".to_string(),
-            bind_address: "127.0.0.1:8080".to_string(),
+            address: "127.0.0.1".to_string(),
+            port: 8080,
+            // bind_address: "127.0.0.1:8080".to_string(),
         }
     }
 }
@@ -64,10 +68,18 @@ impl From<Config> for Settings {
         if let Ok(o) = value.get_string("verbose") {
             cfg.verbose = o;
         }
+        if let Ok(o) = value.get_string("address") {
+            cfg.address = o;
+        }
+        if let Ok(o) = value.get_int("port") {
+            cfg.port = o as u16;
+        }
+        // FUTURE add more parsing for new fields added to Settings struct
         cfg
     }
 }
 
+#[allow(dead_code)]
 pub fn write_settings(out: &mut dyn Write, settings: &Settings, fmt: &SettingsOutputFormat) {
     match fmt {
         SettingsOutputFormat::JSON => writeln!(

@@ -1,7 +1,4 @@
-use actix_web::{HttpServer, App, web};
 use log::info;
-
-use crate::route::index::index;
 
 use super::Command;
 

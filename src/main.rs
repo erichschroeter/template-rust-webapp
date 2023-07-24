@@ -2,19 +2,17 @@ mod settings;
 mod command;
 mod route;
 
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use clap::{value_parser, Arg, ArgAction};
-use config::{Config, Environment, File};
+use actix_web::{web, App, HttpServer};
+use clap::{value_parser, Arg};
+use config::{Config, File};
 use log::{debug, error, info, trace, warn, LevelFilter};
 use route::index::index;
 use std::ffi::OsString;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::command::Command;
 use crate::command::run::RunCommand;
-use crate::settings::{default_config_path, write_settings, Settings, SettingsOutputFormat};
+use crate::settings::{default_config_path, Settings};
 
 /// Sets up logging based on the specified verbosity level.
 ///
@@ -55,6 +53,12 @@ fn setup_logging(verbose: &str) {
     env_logger::builder()
         .filter(None, verbose.parse().unwrap_or(LevelFilter::Info))
         .init();
+
+    error!("log level enabled: error");
+    warn!("log level enabled: warn");
+    info!("log level enabled: info");
+    debug!("log level enabled: debug");
+    trace!("log level enabled: trace");
 }
 
 // async fn index() -> impl Responder {
@@ -93,6 +97,7 @@ fn setup_logging(verbose: &str) {
 
 #[actix_web::main]
 async fn main() {
+    // setup_logging("info");
     const ABOUT: &str = "An example CLI program using the following crates:
 
   - clap
@@ -101,7 +106,6 @@ async fn main() {
   - directories
   - serde";
     let default_config_path_value = OsString::from(default_config_path().display().to_string());
-    // const DEFAULT_CONFIG_PATH: &str = "";
     let app = clap::Command::new("FIXME")
         .version("v1.0.0")
         .author("Erich Schroeter <erich.schroeter@gmail.com>")
@@ -130,7 +134,7 @@ Argument values are processed in the following order, using the last processed v
                 .short('v')
                 .long("verbose")
                 .value_name("VERBOSE")
-                .default_value(Settings::default().verbose)
+                // .default_value(Settings::default().verbose)
                 .help("Sets the verbosity log level")
                 .long_help("Choices: [off, error, warn, info, debug, trace]"),
         )
@@ -139,6 +143,27 @@ Argument values are processed in the following order, using the last processed v
         .subcommand(
             clap::Command::new("run")
                 .about("Run the web server")
+                .arg(
+                    Arg::new("address")
+                        .long("address")
+                        .short('a')
+                        .env("FIXME_address")
+                        // .action(ArgAction::Set)
+                        // .default_value("127.0.0.1")
+                        .value_name("ADDRESS")
+                        .help("The port to run the HTTP server on")
+                    )
+                .arg(
+                    Arg::new("port")
+                        .long("port")
+                        .short('p')
+                        .env("FIXME_port")
+                        // .action(ArgAction::Set)
+                        .default_value("8080")
+                        .value_parser(value_parser!(u16))
+                        .value_name("PORT")
+                        .help("The port to run the HTTP server on")
+                    )
         )
         .subcommand(
             clap::Command::new("generate-manifest")
@@ -146,7 +171,11 @@ Argument values are processed in the following order, using the last processed v
         );
     let matches = &app.get_matches();
 
+    let config_path = matches.get_one::<PathBuf>("config").unwrap();
+    println!("Loading config: {}", config_path.display());
     let settings = Config::builder()
+        // Instead using clap for checking environment for variables.
+        // .add_source(Environment::with_prefix("FIXME"))
         .add_source(
             File::with_name(
                 &matches
@@ -157,26 +186,36 @@ Argument values are processed in the following order, using the last processed v
             )
             .required(false),
         )
-        .add_source(Environment::with_prefix("FIXME"))
         .build()
         .unwrap();
 
+    // This will call From<Config> for Settings in settings.rs which will handle reading
+    // the various config formats given the sources listed above via `add_source()`.
     let mut settings: Settings = settings.try_into().unwrap();
 
     // Override the verbose setting in the with command-line arg value if specified.
     if let Some(o) = matches.get_one::<String>("verbose") {
+        println!("overriding verbose to {}", o);
         settings.verbose = o.to_owned();
     }
 
+    // std::env::set_var("RUST_LOG", "actix_web=debug");
+    // std::env::set_var("RUST_LOG", "trace");
+    // std::env::set_var("RUST_BACKTRACE", "1");
     setup_logging(&settings.verbose);
+    debug!("{}", settings);
 
-    error!("testing");
-    warn!("testing");
-    info!("{}", settings);
-    debug!("testing");
-    trace!("testing");
-
-    if let Some(_cmd) = matches.subcommand_matches("run") {
+    if let Some(sub_matches) = matches.subcommand_matches("run") {
+        // Override the address setting in the with command-line arg value if specified.
+        if let Some(o) = sub_matches.get_one::<String>("address") {
+            settings.address = o.to_owned();
+        }
+        // Override the port setting in the with command-line arg value if specified.
+        if let Some(o) = sub_matches.get_one::<u16>("port") {
+            settings.port = o.to_owned();
+        }
+        // FUTURE add more parsing for new fields added to Settings struct
+        debug!("{}", settings);
         run_http_server(&settings).await;
     } else {
         let subcommand = match matches.subcommand() {
@@ -225,13 +264,13 @@ Argument values are processed in the following order, using the last processed v
 }
 
 async fn run_http_server(cfg: &Settings) {
+    info!("Running HTTP Server at http://{}:{}", cfg.address, cfg.port);
     let server = HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(index))
             // .route("/generate-manifest", web::get().to(generate_manifest))
     })
-    .bind(&cfg.bind_address);
-    // .bind("127.0.0.1:8080");
+    .bind((cfg.address.as_str(), cfg.port));
 
     match server {
         Ok(server) => {
