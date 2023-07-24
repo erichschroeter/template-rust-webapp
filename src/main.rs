@@ -7,11 +7,13 @@ use clap::{value_parser, Arg};
 use config::{Config, File};
 use log::{debug, error, info, trace, warn, LevelFilter};
 use route::index::index;
+use tera::Tera;
 use std::ffi::OsString;
 use std::path::PathBuf;
 
 use crate::command::Command;
 use crate::command::run::RunCommand;
+use crate::route::generate_manifest::generate_manifest;
 use crate::settings::{default_config_path, Settings};
 
 /// Sets up logging based on the specified verbosity level.
@@ -265,10 +267,12 @@ Argument values are processed in the following order, using the last processed v
 
 async fn run_http_server(cfg: &Settings) {
     info!("Running HTTP Server at http://{}:{}", cfg.address, cfg.port);
-    let server = HttpServer::new(|| {
+    let tera = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
+    let server = HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(tera.clone()))
             .route("/", web::get().to(index))
-            // .route("/generate-manifest", web::get().to(generate_manifest))
+            .route("/generate-manifest", web::get().to(generate_manifest))
     })
     .bind((cfg.address.as_str(), cfg.port));
 

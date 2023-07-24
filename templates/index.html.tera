@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>Welcome to the {{ title }}</h1>
+    <p><a href="/generate-manifest">Go to Generate Manifest page</a></p>
+</body>
+</html>
