@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use crate::command::Command;
 use crate::command::run::RunCommand;
 use crate::route::generate_manifest::generate_manifest;
+use crate::route::manifest::manifest;
 use crate::settings::{default_config_path, Settings};
 
 /// Sets up logging based on the specified verbosity level.
@@ -272,7 +273,8 @@ async fn run_http_server(cfg: &Settings) {
         App::new()
             .app_data(web::Data::new(tera.clone()))
             .route("/", web::get().to(index))
-            .route("/generate-manifest", web::get().to(generate_manifest))
+            .route("/generate-manifest", web::post().to(generate_manifest))
+            .route("/manifest", web::get().to(manifest))
     })
     .bind((cfg.address.as_str(), cfg.port));
 

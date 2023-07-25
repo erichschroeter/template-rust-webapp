@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-files = "0.6.2"
+actix-multipart = "0.6.0"
 actix-web = { version = "4.3.1", features = ["openssl"] }
 async-trait = "0.1.72"
 chrono = "0.4.26"
@@ -14,6 +15,7 @@ clap = { version = "4.3.17", features = ["string", "env"] }
 config = "0.13.3"
 directories = "5.0.1"
 env_logger = "0.10.0"
+futures-util = "0.3.28"
 json = "0.12.4"
 log = "0.4.19"
 openssl = "0.10.55"
