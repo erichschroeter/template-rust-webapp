@@ -24,7 +24,7 @@ pub async fn generate_manifest(
         if let Some(filename) = content_disposition.get_filename() {
             create_dir_all(dest_dir)?;
             let destination = format!("{}{}", dest_dir, filename);
-            debug!("Writing to {} file {} byte count {}", dest_dir, filename, content_lenth);
+            debug!("Writing to {} file '{}' ({} bytes)", dest_dir, filename, content_lenth);
             // If the file already exists, return 409 with Location of the conflicted file path.
             if Path::new(&destination).exists() {
                 return Ok(HttpResponse::Conflict().append_header(("Location", destination)).finish());
