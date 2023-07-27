@@ -12,6 +12,5 @@
         <input type="text" id="uri" name="uri"><br>
         <input type="submit" value="Generate Manifest">
     </form>
-    <p>{{ message }}</p>
 </body>
 </html>
