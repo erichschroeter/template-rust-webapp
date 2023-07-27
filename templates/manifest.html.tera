@@ -1,20 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
-    <form action="/generate-manifest" method="post" enctype="multipart/form-data">
-        <label for="file">Choose image:</label><br>
-        <select name="file">
-            {% for image in images %}
-            <option value="{{ image }}">{{ image }}</option>
-            {% endfor %}
-        </select><br>
-        <label for="uri">Payload URI:</label><br>
-        <input type="text" id="uri" name="uri"><br>
-        <input type="submit" value="Generate Manifest">
-    </form>
-</body>
-</html>
+{% extends "base.html.tera" %}
+
+{% block title %}
+{{ title }}
+{% endblock title %}
+
+{% block content %}
+<form action="/generate-manifest" method="post" enctype="multipart/form-data">
+    <label for="file">Choose image:</label><br>
+    <select name="file">
+        {% for image in images %}
+        <option value="{{ image }}">{{ image }}</option>
+        {% endfor %}
+    </select><br>
+    <label for="uri">Payload URI:</label><br>
+    <input type="text" id="uri" name="uri"><br>
+    <input type="submit" value="Generate Manifest">
+</form>
+{% endblock content %}

@@ -1,14 +1,14 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
-    <form action="/image-upload" method="post" enctype="multipart/form-data">
-        <label for="file">Choose file:</label><br>
-        <input type="file" id="file" name="file"><br>
-        <input type="submit" value="Submit">
-    </form>
-</body>
-</html>
+{% extends "base.html.tera" %}
+
+{% block title %}
+{{ title }}
+{% endblock title %}
+
+{% block content %}
+<form action="/image-upload" method="post" enctype="multipart/form-data">
+    <label for="file">Choose file:</label><br>
+    <input type="file" id="file" name="file"><br>
+    <input type="submit" value="Submit">
+</form>
+{% endblock content %}
+

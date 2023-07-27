@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock title %}</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/image-upload">Upload Image</a></li>
+            <li><a href="/manifest">Generate Manifest</a></li>
+            <li><a href="/images">Images</a></li>
+        </ul>
+    </nav>
+    {% block content %}{% endblock content %}
+</body>
+</html>
