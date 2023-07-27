@@ -1,13 +1,34 @@
-use actix_web::{Responder, HttpResponse, web};
+use std::fs;
+
+use actix_web::{HttpResponse, web};
 use tera::Context;
 
 
-pub async fn manifest(tmpl: web::Data<tera::Tera>) -> impl Responder {
-    // HttpResponse::Ok().body("Help text")
+pub async fn manifest(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResponse> {
+    // Read the uploads directory
+    let entries = fs::read_dir("./uploads")?;
+
+    // Collect .cgi and .sgi files
+    let mut images: Vec<String> = Vec::new();
+    for entry in entries {
+        let entry = entry?;
+        let path = entry.path();
+
+        // Check if the entry is a file and if it has the correct extension
+        if path.is_file() {
+            if let Some(extension) = path.extension() {
+                if extension == "cgi" || extension == "sgi" {
+                    if let Some(file_name) = path.file_name() {
+                        images.push(file_name.to_string_lossy().into_owned());
+                    }
+                }
+            }
+        }
+    }
 
     let mut ctx = Context::new();
     ctx.insert("title", "Manifest");
-    ctx.insert("message", "Successful");
-    let s = tmpl.render("manifest.html.tera", &ctx).unwrap();
-    HttpResponse::Ok().body(s)
+    ctx.insert("images", &images);
+    let rendered = tmpl.render("manifest.html.tera", &ctx).unwrap();
+    Ok(HttpResponse::Ok().body(rendered))
 }

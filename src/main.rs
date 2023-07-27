@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use crate::command::Command;
 use crate::command::run::RunCommand;
 use crate::route::generate_manifest::generate_manifest;
+use crate::route::image_upload::{image_upload, image_upload_get};
 use crate::route::images::images;
 use crate::route::manifest::manifest;
 use crate::settings::{default_config_path, Settings};
@@ -275,6 +276,8 @@ async fn run_http_server(cfg: &Settings) {
             .app_data(web::Data::new(tera.clone()))
             .route("/", web::get().to(index))
             .route("/images", web::get().to(images))
+            .route("/image-upload", web::get().to(image_upload_get))
+            .route("/image-upload", web::post().to(image_upload))
             .route("/generate-manifest", web::post().to(generate_manifest))
             .route("/manifest", web::get().to(manifest))
     })

@@ -1,10 +1,10 @@
 use std::fs;
 
-use actix_web::{ HttpResponse, web, Result};
+use actix_web::{ HttpResponse, web};
 use tera::Context;
 
 
-pub async fn images(tmpl: web::Data<tera::Tera>) -> Result<HttpResponse> {
+pub async fn images(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResponse> {
     // Read the uploads directory
     let entries = fs::read_dir("./uploads")?;
 
