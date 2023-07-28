@@ -200,7 +200,6 @@ Argument values are processed in the following order, using the last processed v
 
     // Override the verbose setting in the with command-line arg value if specified.
     if let Some(o) = matches.get_one::<String>("verbose") {
-        println!("overriding verbose to {}", o);
         settings.verbose = o.to_owned();
     }
 
