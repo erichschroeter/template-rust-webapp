@@ -7,6 +7,6 @@ pub async fn index(tmpl: web::Data<tera::Tera>) -> impl Responder {
     // HttpResponse::Ok().body("Help text")
     let mut ctx = Context::new();
     ctx.insert("title", "Index Page");
-    let s = tmpl.render("index.html.tera", &ctx).unwrap();
+    let s = tmpl.render("index.html", &ctx).unwrap();
     HttpResponse::Ok().body(s)
 }

@@ -29,6 +29,6 @@ pub async fn images(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpRespon
     let mut ctx = Context::new();
     ctx.insert("title", "Firmware Images");
     ctx.insert("images", &images);
-    let rendered = tmpl.render("images.html.tera", &ctx).unwrap();
+    let rendered = tmpl.render("images.html", &ctx).unwrap();
     Ok(HttpResponse::Ok().body(rendered))
 }

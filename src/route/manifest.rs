@@ -29,6 +29,6 @@ pub async fn manifest(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResp
     let mut ctx = Context::new();
     ctx.insert("title", "Manifest");
     ctx.insert("images", &images);
-    let rendered = tmpl.render("manifest.html.tera", &ctx).unwrap();
+    let rendered = tmpl.render("manifest.html", &ctx).unwrap();
     Ok(HttpResponse::Ok().body(rendered))
 }

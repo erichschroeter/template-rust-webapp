@@ -10,7 +10,7 @@ use std::{io::Write, fs::create_dir_all, path::Path};
 pub async fn image_upload_get(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResponse> {
     let mut ctx = Context::new();
     ctx.insert("title", "Upload Firmware Image");
-    let rendered = tmpl.render("image_upload.html.tera", &ctx).unwrap();
+    let rendered = tmpl.render("image_upload.html", &ctx).unwrap();
     Ok(HttpResponse::Ok().body(rendered))
 }
 
