@@ -42,7 +42,7 @@ pub struct Settings {
     pub verbose: String,
     pub address: String,
     pub port: u16,
-    // pub bind_address: String,
+    pub template_dir: PathBuf,
 }
 
 impl Default for Settings {
@@ -51,7 +51,7 @@ impl Default for Settings {
             verbose: "info".to_string(),
             address: "127.0.0.1".to_string(),
             port: 8080,
-            // bind_address: "127.0.0.1:8080".to_string(),
+            template_dir: default_template_path(),
         }
     }
 }
@@ -73,6 +73,9 @@ impl From<Config> for Settings {
         }
         if let Ok(o) = value.get_int("port") {
             cfg.port = o as u16;
+        }
+        if let Ok(o) = value.get_string("template_dir") {
+            cfg.template_dir = PathBuf::from(o);
         }
         // FUTURE add more parsing for new fields added to Settings struct
         cfg
@@ -151,4 +154,8 @@ pub fn default_config_path() -> PathBuf {
     let mut path = PathBuf::from(user_dirs.home_dir());
     path.push(".config/FIXME/default.yaml");
     path
+}
+
+pub fn default_template_path() -> PathBuf {
+    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"))
 }

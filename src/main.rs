@@ -10,6 +10,7 @@ use route::index::index;
 use tera::Tera;
 use std::ffi::OsString;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use crate::command::Command;
 use crate::command::run::RunCommand;
@@ -17,7 +18,7 @@ use crate::route::generate_manifest::generate_manifest;
 use crate::route::image_upload::{image_upload, image_upload_get};
 use crate::route::images::images;
 use crate::route::manifest::manifest;
-use crate::settings::{default_config_path, Settings};
+use crate::settings::{default_config_path, Settings, default_template_path};
 
 /// Sets up logging based on the specified verbosity level.
 ///
@@ -111,6 +112,8 @@ async fn main() {
   - directories
   - serde";
     let default_config_path_value = OsString::from(default_config_path().display().to_string());
+    // let default_template_dir = OsString::from(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"));
+    let default_template_dir = OsString::from(default_template_path());
     let app = clap::Command::new("FIXME")
         .version("v1.0.0")
         .author("Erich Schroeter <erich.schroeter@gmail.com>")
@@ -168,6 +171,16 @@ Argument values are processed in the following order, using the last processed v
                         .value_parser(value_parser!(u16))
                         .value_name("PORT")
                         .help("The port to run the HTTP server on")
+                    )
+                .arg(
+                    Arg::new("templates_dir")
+                        .long("templates_dir")
+                        .short('t')
+                        .env("FIXME_templates_dir")
+                        .default_value(&default_template_dir)
+                        .value_parser(value_parser!(PathBuf))
+                        .value_name("DIR")
+                        .help("Directory path to where HTML templates are stored")
                     )
         )
         .subcommand(
@@ -269,6 +282,13 @@ Argument values are processed in the following order, using the last processed v
 
 async fn run_http_server(cfg: &Settings) {
     info!("Running HTTP Server at http://{}:{}", cfg.address, cfg.port);
+    let template_dir = cfg
+        .template_dir
+        .clone()
+        .into_os_string()
+        .into_string()
+        .unwrap();
+    let template_dir = Arc::new(template_dir);
     let tera = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
     let server = HttpServer::new(move || {
         App::new()
