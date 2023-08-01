@@ -11,6 +11,7 @@ RUN cargo build --release
 FROM python:slim-bullseye
 
 WORKDIR /home/rust/src
+COPY ./requirements.txt /home/rust/src/
 
 # RUN pip install manifest-tool
 # Clone v1.5.2
@@ -19,7 +20,7 @@ WORKDIR /home/rust/src
 # Use `--no-cache-dir` since Docker has its own cache.
 RUN pip install --no-cache-dir -r /home/rust/src/requirements.txt
 # Use `--no-cache` since Docker has its own cache.
-RUN apk --no-cache add ca-certificates
+# RUN apk --no-cache add ca-certificates
 
 # Copy the executable and its dependencies from the builder image into the Python-based image.
 RUN mkdir -p /home/rust/src/templates
