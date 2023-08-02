@@ -6,9 +6,12 @@ use log::debug;
 use tera::Context;
 use std::{io::Write, fs::create_dir_all, path::Path};
 
+use super::VERSION;
+
 
 pub async fn image_upload_get(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResponse> {
     let mut ctx = Context::new();
+    ctx.insert("version", &VERSION);
     ctx.insert("title", "Upload Firmware Image");
     let rendered = tmpl.render("image_upload.html", &ctx).unwrap();
     Ok(HttpResponse::Ok().body(rendered))

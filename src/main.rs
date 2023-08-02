@@ -9,7 +9,7 @@ use log::{debug, error, info, trace, warn, LevelFilter};
 use route::index::index;
 use tera::Tera;
 use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::sync::Arc;
 
 use crate::command::Command;
@@ -190,7 +190,7 @@ Argument values are processed in the following order, using the last processed v
     let matches = &app.get_matches();
 
     let config_path = matches.get_one::<PathBuf>("config").unwrap();
-    println!("Loading config: {}", config_path.display());
+    info!("Loading config: {}", config_path.display());
     let settings = Config::builder()
         // Instead using clap for checking environment for variables.
         // .add_source(Environment::with_prefix("FIXME"))
@@ -270,12 +270,11 @@ Argument values are processed in the following order, using the last processed v
             //     );
             // }
             _ => {
-                // println!("{}", ABOUT);
                 unreachable!()
             }
         };
         if let Err(e) = subcommand.execute() {
-            eprintln!("Error executing command: {}", e);
+            error!("Error executing command: {}", e);
         }
     }
 }
@@ -288,7 +287,8 @@ async fn run_http_server(cfg: &Settings) {
         .into_os_string()
         .into_string()
         .unwrap();
-    let template_dir = Arc::new(template_dir);
+    // let tera = Tera::new(&Path::new(&template_dir).join("/**/*").display().to_string()).unwrap();
+    // let template_dir = Arc::new(template_dir);
     let tera = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
     let server = HttpServer::new(move || {
         App::new()
@@ -305,9 +305,9 @@ async fn run_http_server(cfg: &Settings) {
     match server {
         Ok(server) => {
             if let Err(e) = server.run().await {
-                eprintln!("Server error: {}", e);
+                error!("Server error: {}", e);
             }
         }
-        Err(e) => eprintln!("Failed to bind server: {}", e),
+        Err(e) => error!("Failed to bind server: {}", e),
     }
 }
