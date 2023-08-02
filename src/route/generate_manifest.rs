@@ -1,3 +1,5 @@
+use std::io::{ErrorKind, self};
+
 use actix_multipart::Multipart;
 use actix_web::{HttpRequest, HttpResponse, web};
 // use futures_util::{StreamExt, TryStreamExt};
@@ -10,7 +12,7 @@ use log::{debug, warn};
 async fn manifest_tool(
     _image_path: &str,
     _payload_uri: &str,
-) -> Result<(), std::io::Error> {
+) -> Result<String, std::io::Error> {
     // while let Some(item) = payload.next().await {
     //     let mut field = item?;
     //     let content_disposition = field.content_disposition();
@@ -19,8 +21,24 @@ async fn manifest_tool(
     //         debug!("Form name: {}", name);
     //     }
     // }
-    warn!("Running manifest_tool");
-    Ok(())
+    warn!("Executing manifest_tool");
+    let output = std::process::Command::new("manifest-tool")
+        .arg("--version")
+        // .args(&args)
+        .output()?;
+
+    if !output.status.success() {
+        let kind = ErrorKind::Other;
+        let err = io::Error::new(kind, "manifest-tool execution failed");
+        return Err(err);
+    }
+
+    match String::from_utf8(output.stdout) {
+        Ok(v) => Ok(v),
+        Err(e) => Err(io::Error::new(ErrorKind::InvalidData, e.to_string())),
+    }
+
+    // Ok(())
 }
 
 pub async fn generate_manifest(
@@ -58,6 +76,9 @@ pub async fn generate_manifest(
     //     // }
     // }
     // manifest_tool(image_filename.unwrap(), payload_uri.unwrap());
+    if let Ok(output) = manifest_tool("sbh.sgi", "http://google.com").await {
+        warn!("OUTPUT: {}", output);
+    }
     Ok(HttpResponse::Ok().finish())
     // Ok(HttpResponse::SeeOther().append_header(("Location", "/")).finish())
 }

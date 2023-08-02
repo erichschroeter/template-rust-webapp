@@ -115,7 +115,7 @@ async fn main() {
     // let default_template_dir = OsString::from(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"));
     let default_template_dir = OsString::from(default_template_path());
     let app = clap::Command::new("FIXME")
-        .version("v1.0.0")
+        .version("v1.0.1")
         .author("Erich Schroeter <erich.schroeter@gmail.com>")
         .about(ABOUT)
         .long_about(format!(
