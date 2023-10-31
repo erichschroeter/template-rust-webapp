@@ -42,7 +42,7 @@ pub struct Settings {
     pub verbose: String,
     pub address: String,
     pub port: u16,
-    pub template_dir: PathBuf,
+    pub template_glob: String,
 }
 
 impl Default for Settings {
@@ -51,7 +51,7 @@ impl Default for Settings {
             verbose: "info".to_string(),
             address: "127.0.0.1".to_string(),
             port: 8080,
-            template_dir: default_template_path(),
+            template_glob: default_template_glob(),
         }
     }
 }
@@ -74,8 +74,8 @@ impl From<Config> for Settings {
         if let Ok(o) = value.get_int("port") {
             cfg.port = o as u16;
         }
-        if let Ok(o) = value.get_string("template_dir") {
-            cfg.template_dir = PathBuf::from(o);
+        if let Ok(o) = value.get_string("template_glob") {
+            cfg.template_glob = o;
         }
         // FUTURE add more parsing for new fields added to Settings struct
         cfg
@@ -149,6 +149,7 @@ pub fn write_settings(out: &mut dyn Write, settings: &Settings, fmt: &SettingsOu
 ///
 /// It is recommended to handle the potential errors when using this function.
 ///
+#[allow(dead_code)]
 pub fn default_config_path() -> PathBuf {
     let user_dirs = UserDirs::new().unwrap();
     let mut path = PathBuf::from(user_dirs.home_dir());
@@ -156,6 +157,32 @@ pub fn default_config_path() -> PathBuf {
     path
 }
 
-pub fn default_template_path() -> PathBuf {
-    PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"))
+#[allow(dead_code)]
+pub fn default_template_glob() -> String {
+    concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*").to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use unindent::unindent;
+
+    use super::*;
+
+    #[test]
+    fn writing_default_cfg_as_yaml() {
+        let expected = format!(
+            r#"
+        verbose: info
+        address: 127.0.0.1
+        port: 8080
+        template_glob: {}
+
+        "#,
+            default_template_glob()
+        );
+        let mut actual = Vec::new();
+        let settings = Settings::default();
+        write_settings(&mut actual, &settings, &SettingsOutputFormat::YAML);
+        assert_eq!(unindent(&expected), String::from_utf8_lossy(&actual));
+    }
 }
