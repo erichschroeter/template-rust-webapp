@@ -4,11 +4,10 @@ use log::{debug, info};
 use tera::Tera;
 
 use crate::{
-    cli::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler},
     cfg::{default_config_path, default_template_glob, Cfg},
+    cli::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler},
+    APP_PREFIX,
 };
-
-const APP_PREFIX: &str = "FIXME_";
 
 fn run_http_server(cfg: &Cfg) -> std::io::Result<()> {
     info!("Running HTTP Server at http://{}:{}", cfg.address, cfg.port);
@@ -62,48 +61,44 @@ pub fn run(matches: &ArgMatches) {
             )),
         )))
         .handle_request("config");
-    // let config_path = config_path.handle_request("config");
-    let config_path = config_path.expect("msg");
-    info!("Loading config: {}", config_path);
-    // let settings = Config::builder()
-    //     // Instead using clap for checking environment for variables.
-    //     // .add_source(Environment::with_prefix("FIXME"))
-    //     .add_source(
-    //         config::File::with_name(
-    //             &matches
-    //                 .get_one::<PathBuf>("config")
-    //                 .unwrap()
-    //                 .display()
-    //                 .to_string(),
-    //         )
-    //         .required(false),
-    //     )
-    //     .build()
-    //     .unwrap();
-
-    // // This will call From<Config> for Cfg in settings.rs which will handle reading
-    // // the various config formats given the sources listed above via `add_source()`.
-    // let mut cfg: Cfg = settings.try_into().unwrap();
+    let config_path = config_path.expect("No config path");
     let mut cfg = Cfg::default();
-    debug!("{}", cfg);
 
-    let cfg_handler = CfgFileHandler::new(config_path);
+    // let cfg_handler = Rc::new(cfg_handler);
     let template_glob = ArgHandler::new(matches)
-        .next(Box::new(EnvHandler::new().prefix(APP_PREFIX).next(
-            Box::new(cfg_handler.next(Box::new(DefaultHandler::new(&default_template_glob())))),
-        )))
+        .next(Box::new(
+            EnvHandler::new()
+                .prefix(APP_PREFIX)
+                .next(Box::new(CfgFileHandler::new(&config_path).next(Box::new(
+                    DefaultHandler::new(&default_template_glob()),
+                )))),
+        ))
         .handle_request("template_glob");
     if let Some(template_glob) = template_glob {
         cfg.template_glob = template_glob;
     }
 
-    // Override the address setting in the with command-line arg value if specified.
-    if let Some(o) = matches.get_one::<String>("address") {
-        cfg.address = o.to_owned();
+    let address = ArgHandler::new(matches)
+        .next(Box::new(EnvHandler::new().prefix(APP_PREFIX).next(
+            Box::new(
+                CfgFileHandler::new(&config_path).next(Box::new(DefaultHandler::new("127.0.0.1"))),
+            ),
+        )))
+        .handle_request("address");
+    if let Some(address) = address {
+        cfg.address = address.to_owned();
     }
-    // Override the port setting in the with command-line arg value if specified.
-    if let Some(o) = matches.get_one::<u16>("port") {
-        cfg.port = o.to_owned();
+
+    let port = ArgHandler::new(matches)
+        .next(Box::new(EnvHandler::new().prefix(APP_PREFIX).next(
+            Box::new(CfgFileHandler::new(&config_path).next(Box::new(DefaultHandler::new("8080")))),
+        )))
+        .handle_request("port");
+    if let Some(port) = port {
+        cfg.port = port.parse::<u16>().expect(&format!(
+            "Failed to convert {} to unsigned 16-bit integer",
+            port
+        ))
     }
     // FUTURE add more parsing for new fields added to Cfg struct
     debug!("{}", cfg);

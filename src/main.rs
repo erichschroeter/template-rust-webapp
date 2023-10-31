@@ -1,13 +1,18 @@
+mod cfg;
 mod cli;
 mod command;
 mod route;
-mod cfg;
 
+use cfg::default_config_path;
 use clap::{value_parser, Arg};
+use cli::CfgFileHandler;
 use log::{debug, error, info, trace, warn, LevelFilter};
 use std::path::PathBuf;
 
 use crate::cli::{ArgHandler, DefaultHandler, EnvHandler, FileHandler, Handler};
+
+const APP_NAME: &str = "FIXME";
+const APP_PREFIX: &str = "FIXME_";
 
 /// Sets up logging based on the specified verbosity level.
 ///
@@ -24,7 +29,7 @@ use crate::cli::{ArgHandler, DefaultHandler, EnvHandler, FileHandler, Handler};
 ///
 /// # Arguments
 ///
-/// * `verbose` - A string slice representing the desired verbosity level.
+/// * `verbosity` - A string slice representing the desired verbosity level.
 ///   Valid values are "off", "error", "warn", "info", "debug", and "trace".
 ///   If an invalid value is provided, the default level will be set to "info".
 ///
@@ -37,16 +42,16 @@ use crate::cli::{ArgHandler, DefaultHandler, EnvHandler, FileHandler, Handler};
 ///
 /// # Panics
 ///
-/// This function will panic if the `verbose` string cannot be parsed into a `LevelFilter`.
+/// This function will panic if the `verbosity` string cannot be parsed into a `LevelFilter`.
 ///
 /// # Notes
 ///
 /// It is recommended to call this function early in the program to set up logging
 /// before any log messages are generated.
 ///
-fn setup_logging(verbose: &str) {
+fn setup_logging(verbosity: &str) {
     env_logger::builder()
-        .filter(None, verbose.parse().unwrap_or(LevelFilter::Info))
+        .filter(None, verbosity.parse().unwrap_or(LevelFilter::Info))
         .init();
 
     error!("log level enabled: error");
@@ -95,11 +100,11 @@ impl App {
                         .value_parser(value_parser!(PathBuf)),
                 )
                 .arg(
-                    Arg::new("verbose")
+                    Arg::new("verbosity")
                         .short('v')
-                        .long("verbose")
+                        .long("verbosity")
                         .value_name("VERBOSE")
-                        // .default_value(Cfg::default().verbose)
+                        // .default_value(Cfg::default().verbosity)
                         .help("Sets the verbosity log level")
                         .long_help("Choices: [off, error, warn, info, debug, trace]"),
                 )
@@ -112,20 +117,20 @@ impl App {
                             Arg::new("address")
                                 .long("address")
                                 .short('a')
-                                .env("FIXME_address")
+                                // .env("FIXME_address")
                                 // .action(ArgAction::Set)
                                 // .default_value("127.0.0.1")
                                 .value_name("ADDRESS")
-                                .help("The port to run the HTTP server on"),
+                                .help("The IP address to run the HTTP server on"),
                         )
                         .arg(
                             Arg::new("port")
                                 .long("port")
                                 .short('p')
-                                .env("FIXME_port")
+                                // .env("FIXME_port")
                                 // .action(ArgAction::Set)
-                                .default_value("8080")
-                                .value_parser(value_parser!(u16))
+                                // .default_value("8080")
+                                // .value_parser(value_parser!(u16))
                                 .value_name("PORT")
                                 .help("The port to run the HTTP server on"),
                         )
@@ -153,13 +158,23 @@ impl App {
     {
         let matches = &self.args.clone().get_matches_from(args);
 
+        let config_path = ArgHandler::new(matches)
+            .next(Box::new(EnvHandler::new().prefix(APP_PREFIX).next(
+                Box::new(DefaultHandler::new(
+                    &default_config_path().display().to_string(),
+                )),
+            )))
+            .handle_request("config")
+            .unwrap();
+
         let verbosity_handler = ArgHandler::new(matches).next(Box::new(
-            EnvHandler::new().prefix("FIXME_").next(Box::new(
-                FileHandler::new("~/.config/fixme/verbosity")
-                    .next(Box::new(DefaultHandler::new("info"))),
+            EnvHandler::new().prefix(APP_PREFIX).next(Box::new(
+                FileHandler::new(format!("~/.config/{APP_NAME}/verbosity")).next(Box::new(
+                    CfgFileHandler::new(config_path).next(Box::new(DefaultHandler::new("info"))),
+                )),
             )),
         ));
-        if let Some(verbosity) = verbosity_handler.handle_request("VERBOSITY") {
+        if let Some(verbosity) = verbosity_handler.handle_request("verbosity") {
             // std::env::set_var("RUST_LOG", "actix_web=debug");
             // std::env::set_var("RUST_LOG", "trace");
             // std::env::set_var("RUST_BACKTRACE", "1");
