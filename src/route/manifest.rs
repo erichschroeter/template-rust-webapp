@@ -1,10 +1,9 @@
 use std::fs;
 
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 use tera::Context;
 
 use super::VERSION;
-
 
 pub async fn manifest(tmpl: web::Data<tera::Tera>) -> actix_web::Result<HttpResponse> {
     // Collect .cgi and .sgi files

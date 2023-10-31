@@ -1,18 +1,14 @@
-use std::io::{ErrorKind, self};
+use std::io::{self, ErrorKind};
 
 use actix_multipart::Multipart;
-use actix_web::{HttpRequest, HttpResponse, web};
+use actix_web::{web, HttpRequest, HttpResponse};
 // use futures_util::{StreamExt, TryStreamExt};
 use futures_util::StreamExt as _;
 use log::{debug, warn};
 // use log::debug;
 // use std::{io::Write, fs::create_dir_all, path::Path};
 
-
-async fn manifest_tool(
-    _image_path: &str,
-    _payload_uri: &str,
-) -> Result<String, std::io::Error> {
+async fn manifest_tool(_image_path: &str, _payload_uri: &str) -> Result<String, std::io::Error> {
     // while let Some(item) = payload.next().await {
     //     let mut field = item?;
     //     let content_disposition = field.content_disposition();
