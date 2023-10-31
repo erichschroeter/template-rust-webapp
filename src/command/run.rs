@@ -5,7 +5,7 @@ use tera::Tera;
 
 use crate::{
     cli::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler},
-    settings::{default_config_path, default_template_glob, Cfg},
+    cfg::{default_config_path, default_template_glob, Cfg},
 };
 
 const APP_PREFIX: &str = "FIXME_";

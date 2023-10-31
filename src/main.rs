@@ -1,7 +1,7 @@
 mod cli;
 mod command;
 mod route;
-mod settings;
+mod cfg;
 
 use clap::{value_parser, Arg};
 use log::{debug, error, info, trace, warn, LevelFilter};
