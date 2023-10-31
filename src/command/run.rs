@@ -5,12 +5,12 @@ use tera::Tera;
 
 use crate::{
     cli::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler},
-    settings::{default_config_path, default_template_glob, Settings},
+    settings::{default_config_path, default_template_glob, Cfg},
 };
 
 const APP_PREFIX: &str = "FIXME_";
 
-fn run_http_server(cfg: &Settings) -> std::io::Result<()> {
+fn run_http_server(cfg: &Cfg) -> std::io::Result<()> {
     info!("Running HTTP Server at http://{}:{}", cfg.address, cfg.port);
     // let template_dir = cfg
     //     .template_dir
@@ -81,10 +81,10 @@ pub fn run(matches: &ArgMatches) {
     //     .build()
     //     .unwrap();
 
-    // // This will call From<Config> for Settings in settings.rs which will handle reading
+    // // This will call From<Config> for Cfg in settings.rs which will handle reading
     // // the various config formats given the sources listed above via `add_source()`.
-    // let mut cfg: Settings = settings.try_into().unwrap();
-    let mut cfg = Settings::default();
+    // let mut cfg: Cfg = settings.try_into().unwrap();
+    let mut cfg = Cfg::default();
     debug!("{}", cfg);
 
     let cfg_handler = CfgFileHandler::new(config_path);
@@ -105,7 +105,7 @@ pub fn run(matches: &ArgMatches) {
     if let Some(o) = matches.get_one::<u16>("port") {
         cfg.port = o.to_owned();
     }
-    // FUTURE add more parsing for new fields added to Settings struct
+    // FUTURE add more parsing for new fields added to Cfg struct
     debug!("{}", cfg);
     match run_http_server(&cfg) {
         Ok(_) => {}

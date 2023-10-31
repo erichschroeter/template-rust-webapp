@@ -99,7 +99,7 @@ impl App {
                         .short('v')
                         .long("verbose")
                         .value_name("VERBOSE")
-                        // .default_value(Settings::default().verbose)
+                        // .default_value(Cfg::default().verbose)
                         .help("Sets the verbosity log level")
                         .long_help("Choices: [off, error, warn, info, debug, trace]"),
                 )

@@ -7,47 +7,47 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub enum SettingsOutputFormat {
+pub enum CfgOutputFormat {
     JSON,
     TOML,
     YAML,
 }
 
-impl Default for &SettingsOutputFormat {
+impl Default for &CfgOutputFormat {
     fn default() -> Self {
-        &SettingsOutputFormat::TOML
+        &CfgOutputFormat::TOML
     }
 }
 
-impl clap::ValueEnum for SettingsOutputFormat {
+impl clap::ValueEnum for CfgOutputFormat {
     fn value_variants<'a>() -> &'a [Self] {
         &[
-            SettingsOutputFormat::JSON,
-            SettingsOutputFormat::TOML,
-            SettingsOutputFormat::YAML,
+            CfgOutputFormat::JSON,
+            CfgOutputFormat::TOML,
+            CfgOutputFormat::YAML,
         ]
     }
 
     fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
         Some(match self {
-            SettingsOutputFormat::JSON => PossibleValue::new("json").help("JSON"),
-            SettingsOutputFormat::TOML => PossibleValue::new("toml").help("TOML"),
-            SettingsOutputFormat::YAML => PossibleValue::new("yaml").help("YAML"),
+            CfgOutputFormat::JSON => PossibleValue::new("json").help("JSON"),
+            CfgOutputFormat::TOML => PossibleValue::new("toml").help("TOML"),
+            CfgOutputFormat::YAML => PossibleValue::new("yaml").help("YAML"),
         })
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct Settings {
+pub struct Cfg {
     pub verbose: String,
     pub address: String,
     pub port: u16,
     pub template_glob: String,
 }
 
-impl Default for Settings {
+impl Default for Cfg {
     fn default() -> Self {
-        Settings {
+        Cfg {
             verbose: "info".to_string(),
             address: "127.0.0.1".to_string(),
             port: 8080,
@@ -56,15 +56,15 @@ impl Default for Settings {
     }
 }
 
-impl std::fmt::Display for Settings {
+impl std::fmt::Display for Cfg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl From<Config> for Settings {
+impl From<Config> for Cfg {
     fn from(value: Config) -> Self {
-        let mut cfg = Settings::default();
+        let mut cfg = Cfg::default();
         if let Ok(o) = value.get_string("verbose") {
             cfg.verbose = o;
         }
@@ -77,27 +77,27 @@ impl From<Config> for Settings {
         if let Ok(o) = value.get_string("template_glob") {
             cfg.template_glob = o;
         }
-        // FUTURE add more parsing for new fields added to Settings struct
+        // FUTURE add more parsing for new fields added to Cfg struct
         cfg
     }
 }
 
 #[allow(dead_code)]
-pub fn write_settings(out: &mut dyn Write, settings: &Settings, fmt: &SettingsOutputFormat) {
+pub fn write_cfg(out: &mut dyn Write, settings: &Cfg, fmt: &CfgOutputFormat) {
     match fmt {
-        SettingsOutputFormat::JSON => writeln!(
+        CfgOutputFormat::JSON => writeln!(
             out,
             "{}",
             serde_json::to_string_pretty(&settings).expect("Failed to serialize settings to JSON")
         )
         .expect("Failed to write config to stdout"),
-        SettingsOutputFormat::TOML => writeln!(
+        CfgOutputFormat::TOML => writeln!(
             out,
             "{}",
             toml::to_string_pretty(&settings).expect("Failed to serialize settings to TOML")
         )
         .expect("Failed to write config to stdout"),
-        SettingsOutputFormat::YAML => writeln!(
+        CfgOutputFormat::YAML => writeln!(
             out,
             "{}",
             serde_yaml::to_string(&settings).expect("Failed to serialize settings to YAML")
@@ -181,8 +181,8 @@ mod tests {
             default_template_glob()
         );
         let mut actual = Vec::new();
-        let settings = Settings::default();
-        write_settings(&mut actual, &settings, &SettingsOutputFormat::YAML);
+        let settings = Cfg::default();
+        write_cfg(&mut actual, &settings, &CfgOutputFormat::YAML);
         assert_eq!(unindent(&expected), String::from_utf8_lossy(&actual));
     }
 }
