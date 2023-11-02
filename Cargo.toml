@@ -16,6 +16,7 @@ async-trait = "0.1.72"
 chrono = "0.4.26"
 clap = { version = "4.3.17", features = ["string", "env"] }
 config = "0.13.3"
+cor-args = "0.1.0"
 directories = "5.0.1"
 env_logger = "0.10.0"
 futures-util = "0.3.28"

@@ -1,15 +1,13 @@
 mod cfg;
-mod cli;
 mod command;
 mod route;
 
 use cfg::default_config_path;
 use clap::{value_parser, Arg};
-use cli::CfgFileHandler;
+use cor_args::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, FileHandler, Handler};
 use log::{debug, error, info, trace, warn, LevelFilter};
 use std::path::PathBuf;
 
-use crate::cli::{ArgHandler, DefaultHandler, EnvHandler, FileHandler, Handler};
 
 const APP_NAME: &str = "FIXME";
 const APP_PREFIX: &str = "FIXME_";

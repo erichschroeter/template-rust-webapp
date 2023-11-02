@@ -1,11 +1,11 @@
 use actix_web::{rt, web, HttpServer};
 use clap::ArgMatches;
+use cor_args::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler};
 use log::{debug, info};
 use tera::Tera;
 
 use crate::{
     cfg::{default_config_path, default_template_glob, Cfg},
-    cli::{ArgHandler, CfgFileHandler, DefaultHandler, EnvHandler, Handler},
     APP_PREFIX,
 };
 
