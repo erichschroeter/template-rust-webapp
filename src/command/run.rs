@@ -36,7 +36,7 @@ fn run_http_server(cfg: &Cfg) -> std::io::Result<()> {
             )
             .route(
                 "/generate-manifest",
-                web::post().to(crate::route::generate_manifest::generate_manifest),
+                web::post().to(crate::route::script::execute_script),
             )
             .route("/manifest", web::get().to(crate::route::manifest::manifest))
     })
@@ -50,10 +50,6 @@ fn run_http_server(cfg: &Cfg) -> std::io::Result<()> {
 }
 
 pub fn run(matches: &ArgMatches) {
-    // let default_config_path_value = OsString::from(default_config_path().display().to_string());
-    // let default_template_dir = OsString::from(default_template_path());
-    // let default_template_dir = OsString::from(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*"));
-    // let config_path = matches.get_one::<PathBuf>("config").unwrap();
     let config_path = ArgHandler::new(matches)
         .next(Box::new(EnvHandler::new().prefix(APP_PREFIX).next(
             Box::new(DefaultHandler::new(
@@ -64,7 +60,6 @@ pub fn run(matches: &ArgMatches) {
     let config_path = config_path.expect("No config path");
     let mut cfg = Cfg::default();
 
-    // let cfg_handler = Rc::new(cfg_handler);
     let template_glob = ArgHandler::new(matches)
         .next(Box::new(
             EnvHandler::new()

@@ -37,7 +37,7 @@ async fn manifest_tool(_image_path: &str, _payload_uri: &str) -> Result<String, 
     // Ok(())
 }
 
-pub async fn generate_manifest(
+pub async fn execute_script(
     mut _payload: Multipart,
     _req: HttpRequest,
 ) -> actix_web::Result<HttpResponse> {
